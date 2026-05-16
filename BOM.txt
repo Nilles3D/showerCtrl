@@ -1,0 +1,10 @@
+Temperature sensor TI LPM https://www.ti.com/lit/ds/symlink/lmt86.pdf
+Motors Adafruit 3777 https://www.adafruit.com/product/3777
+H-bridge DRV883 (Adafruit 3297) https://www.adafruit.com/product/3297
+Arduino Nano 33 BLE https://docs.arduino.cc/resources/pinouts/ABX00030-full-pinout.pdf
+Battery case generic 4xAAA https://www.ebay.com/itm/255552948696
+
+LEDs, resistors
+Cables/wires
+Connectors
+Brass male-female 1/2 NPT coupling

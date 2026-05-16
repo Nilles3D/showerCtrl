@@ -1,0 +1,159 @@
+15 degree steps
+
+Starting system...
+  temperature = 2039 (20C)
+Water temp set at 37
+
+Using gear ratio 26.83
+Full speed:
+bit2spd given 255 bits produces 124 RPM
+For basic motor full revolution check: 
+ang2time given 360 degrees (1.00 revs) and 124 RPM (2.07 rps) makes 12983 milliseconds
+For charting temperature per positoin increment: 
+ang2time given 15 degrees (0.04 revs) and 255 RPM (4.25 rps) makes 263 milliseconds
+
+Initial Motor H turn:
+ang2time given 80 degrees (0.22 revs) and 124 RPM (2.07 rps) makes 2885 milliseconds
+
+runMotor given motor 0, direction 255, and time 2885
+ Ramp time approximated as 150
+ H fwd
+ motorH_log now 735675
+
+Initial Motor C turn:
+ang2time given 30 degrees (0.08 revs) and 124 RPM (2.07 rps) makes 1081 milliseconds
+
+runMotor given motor 1, direction -255, and time 1081
+ Ramp time approximated as 150
+ C rev
+ motorC_log now -275655
+
+Waiting for predetermined time ... 
+
+Setup done
+
+While MOTOR_C is at -275655
+  temperature = 2035 (20C)
+  temperature = 2113 (21C)
+  temperature = 2102 (21C)
+  temperature = 2137 (21C)
+  temperature = 2156 (21C)
+
+runMotor given motor 1, direction -255, and time 263
+ Ramp time approximated as 150
+ C rev
+ motorC_log now -342720
+While MOTOR_C is at -342720
+  temperature = 2204 (22C)
+  temperature = 2343 (23C)
+  temperature = 2432 (24C)
+  temperature = 2356 (23C)
+  temperature = 2507 (25C)
+
+runMotor given motor 1, direction -255, and time 263
+ Ramp time approximated as 150
+ C rev
+ motorC_log now -409785
+While MOTOR_C is at -409785
+  temperature = 2266 (22C)
+  temperature = 2597 (25C)
+  temperature = 2627 (26C)
+  temperature = 2554 (25C)
+  temperature = 2553 (25C)
+
+TEST Motor is now reversing
+
+runMotor given motor 1, direction 255, and time 263
+ Ramp time approximated as 150
+ C fwd
+ motorC_log now -342720
+While MOTOR_C is at -342720
+  temperature = 2536 (25C)
+  temperature = 2688 (26C)
+  temperature = 2724 (27C)
+  temperature = 2571 (25C)
+  temperature = 2685 (26C)
+
+runMotor given motor 1, direction 255, and time 263
+ Ramp time approximated as 150
+ C fwd
+ motorC_log now -275655
+While MOTOR_C is at -275655
+  temperature = 2317 (23C)
+  temperature = 2626 (26C)
+  temperature = 2772 (27C)
+  temperature = 2657 (26C)
+  temperature = 2688 (26C)
+
+runMotor given motor 1, direction 255, and time 263
+ Ramp time approximated as 150
+ C fwd
+ motorC_log now -208590
+While MOTOR_C is at -208590
+  temperature = 2648 (26C)
+  temperature = 2789 (27C)
+  temperature = 2745 (27C)
+  temperature = 2793 (27C)
+  temperature = 2796 (27C)
+
+runMotor given motor 1, direction 255, and time 263
+ Ramp time approximated as 150
+ C fwd
+ motorC_log now -141525
+While MOTOR_C is at -141525
+  temperature = 2539 (25C)
+  temperature = 2825 (28C)
+  temperature = 2864 (28C)
+  temperature = 2928 (29C)
+  temperature = 2908 (29C)
+
+runMotor given motor 1, direction 255, and time 263
+ Ramp time approximated as 150
+ C fwd
+ motorC_log now -74460
+While MOTOR_C is at -74460
+  temperature = 2452 (24C)
+  temperature = 2805 (28C)
+  temperature = 2865 (28C)
+  temperature = 2879 (28C)
+  temperature = 2793 (27C)
+
+runMotor given motor 1, direction 255, and time 263
+ Ramp time approximated as 150
+ C fwd
+ motorC_log now -7395
+While MOTOR_C is at -7395
+  temperature = 2402 (24C)
+  temperature = 2809 (28C)
+  temperature = 2879 (28C)
+  temperature = 2840 (28C)
+  temperature = 2940 (29C)
+
+runMotor given motor 1, direction 255, and time 263
+ Ramp time approximated as 150
+ C fwd
+ motorC_log now 59670
+While MOTOR_C is at 59670
+  temperature = 2850 (28C)
+  temperature = 2910 (29C)
+  temperature = 3007 (30C)
+  temperature = 2799 (27C)
+  temperature = 2834 (28C)
+
+TEST Motor has returned beyond home position
+ and will now stop
+
+runMotor given motor 0, direction -255, and time 2886
+ Ramp time approximated as 150
+ H rev
+ motorH_log now -255
+
+runMotor given motor 0, direction -200, and time 60
+ Ramp time approximated as 23
+ H rev
+ motorH_log now -12255
+
+runMotor given motor 1, direction 255, and time 235
+ Ramp time approximated as 150
+ C fwd
+ motorC_log now 119595
