@@ -1,7 +1,6 @@
 // turning shower knobs based on temperature and time
 long showerTime = 3.5 * 60 * 1000; //milliseconds
-int goalTemp = 33; //deg. C
-
+int tempGoal = 33; //deg. C
 
 // ------------------------------------------------------
 // Pin Definitions
@@ -30,11 +29,11 @@ int test_step = 0; //calc later, test temp over motor change
 // ----
 // Temperature
 // ----
-int tempMax = 40; //deg. C, water
-int tempTap = 10; //deg. C, water
-int tempAmbMin = 15; //deg. C, air
+int goalTemp = 0; //deg. C, overridden by calcs later
+int tempMax = 39; //deg. C, water allowable
+int tempTap = 10; //deg. C, water cold only
+int tempAmbMin = 16; //deg. C, air
 int tempAmbMax = 0.9*tempMax; //deg. C, air
-int tempWater = 37; //overridden by calculations later
 int tempCorrection = 2; //deg. C to sensor's output
 const long dRdT = 132; //millis / degree change of Motor C at full speed. Very approximate
 int tempNow = 0; //deg. C
@@ -60,6 +59,8 @@ signed long motorH_log = 0;  //pseudo revolutions
 unsigned long motorC_time = 0;
 signed long motorC_log = 0;
 long time1 = 0; //millis
+float motorH_bias = 120/2885; // when reversing, go this much extra (+) / less (-)
+float motorC_bias = -80/1081; // millis/millis, empirical
 
 
 // ------------------------------------------------------
@@ -204,6 +205,7 @@ void runMotor (int motorID, int direction, int motorTime = 0) {
       Serial.println(" H rev");
       analogWrite(H_IN1, 0);
       analogWrite(H_IN2, abs(direction));
+      rampTime += motorTime*motorH_bias;
     } else {
       Serial.println(" H stop");
       analogWrite(H_IN1, 0);
@@ -224,6 +226,7 @@ void runMotor (int motorID, int direction, int motorTime = 0) {
       Serial.println(" C fwd");
       analogWrite(C_IN1, direction);
       analogWrite(C_IN2, 0);
+      rampTime += motorTime*motorC_bias;
     } else if (direction < 0) {   // - = reverse/counterclockwise
       Serial.println(" C rev");
       analogWrite(C_IN1, 0);
@@ -246,13 +249,11 @@ void runMotor (int motorID, int direction, int motorTime = 0) {
 // Motor return and stop
 void closeAll () {
   //run motors back whatever they're logged for
-
   Serial.println("Closing all valves");
-  int revTime_H = abs(int(motorH_log / revSpeed));
-  
-  runMotor(MOTOR_H, revSpeed, revTime_H + 1);
-  runMotor(MOTOR_H, -200, 90);//extra rxtra
 
+  int revTime_H = abs(int(motorH_log / revSpeed));
+  runMotor(MOTOR_H, revSpeed, revTime_H + 1);
+  
   int revTime_C = abs(int(motorC_log / revSpeed));
   runMotor(MOTOR_C, -revSpeed, revTime_C + 1); 
 }
@@ -276,9 +277,9 @@ void setup() {
 
   // Get ambient temperature to set desired water temp
   int tempAmb = getTemp()-2; //startup causes some heat
-  tempWater = (tempTap - tempMax)/(tempAmbMax - tempAmbMin)*(tempAmb - tempAmbMin) + tempMax;
+  goalTemp = (tempTap - tempMax)/(tempAmbMax - tempAmbMin)*(tempAmb - tempAmbMin) + tempGoal;
   Serial.print("Water temp set at ");
-  Serial.println(tempWater);
+  Serial.println(goalTemp);
   
   // Motor check
   Serial.println();
