@@ -1,6 +1,8 @@
+//#include <ArduinoLowPower.h>
+
 // turning shower knobs based on temperature and time
 long showerTime = 3.5 * 60 * 1000; //milliseconds
-int tempGoal = 33; //deg. C
+int tempGoal = 3100; //deg. C*100 for precision with sigFig integers
 
 // ------------------------------------------------------
 // Pin Definitions
@@ -29,13 +31,14 @@ int test_step = 0; //calc later, test temp over motor change
 // ----
 // Temperature
 // ----
+int sigFigs = 100; //100 = 100th's place decimal accuracy
 int goalTemp = 0; //deg. C, overridden by calcs later
-int tempMax = 39; //deg. C, water allowable
-int tempTap = 10; //deg. C, water cold only
-int tempAmbMin = 16; //deg. C, air
+int tempMax = 40*sigFigs; //deg. C, water allowable
+int tempTap = 10*sigFigs; //deg. C, water cold only
+int tempAmbMin = 15*sigFigs; //deg. C, air
 int tempAmbMax = 0.9*tempMax; //deg. C, air
-int tempCorrection = 2; //deg. C to sensor's output
-const long dRdT = 132; //millis / degree change of Motor C at full speed. Very approximate
+int tempCorrection = 2*sigFigs; //deg. C to sensor's output
+const float dRdT = 1320/sigFigs; //millis / degree change of Motor C at full speed. Very approximate
 int tempNow = 0; //deg. C
 int dT_req = 0; //deg. C
 int dR_req = 0; //fake radians / deg.C
@@ -59,8 +62,9 @@ signed long motorH_log = 0;  //pseudo revolutions
 unsigned long motorC_time = 0;
 signed long motorC_log = 0;
 long time1 = 0; //millis
-float motorH_bias = 120/2885; // when reversing, go this much extra (+) / less (-)
-float motorC_bias = -80/1081; // millis/millis, empirical
+float motorH_bias = 0.026; // when reversing, go this much extra (+) / less (-)
+float motorC_bias = 0.054; // millis/millis, empirical
+long timeJoggle = 30*1000; // seconds
 
 
 // ------------------------------------------------------
@@ -73,7 +77,6 @@ int getTemp () {
   const int tempCount = 10;
   int tempRead = 0;
   int tempSum = 0;
-  int sigFigs = 100;
     
   //Serial.println("Reading temperature sensor multiple times and getting an average...");
   //https://www.ti.com/lit/ds/symlink/lmt86.pdf?HQS=dis-dk-null-digikeymode-dsf-pf-null-wwe&ts=1774490934045
@@ -81,7 +84,7 @@ int getTemp () {
   for (int i=0; i < tempCount; i++){
     //read analog temperature sensor LMT86
     mV = analogRead(T_IN)*3300/1023;
-    tempRead = int((-(10.888-sqrt(pow(10.888,2)+4*0.00347*(1777.3-mV)))/(2*0.00347)+30+tempCorrection)*sigFigs);
+    tempRead = int((-(10.888-sqrt(pow(10.888,2)+4*0.00347*(1777.3-mV)))/(2*0.00347)+30)*sigFigs+tempCorrection);
     tempSum += tempRead;
     /*
     Serial.print("  read ");
@@ -95,8 +98,7 @@ int getTemp () {
   Serial.print("  temperature = ");
   Serial.print(tempRead);
   Serial.print(" (");
-  tempRead /= sigFigs;
-  Serial.print(tempRead);
+  Serial.print(tempRead/sigFigs);
   Serial.println("C)");
 
   return tempRead;
@@ -177,9 +179,9 @@ void runMotor (int motorID, int direction, int motorTime = 0) {
   int min_react = 160; //90RPM
   if (abs(direction) < min_react){
     //time correction
-    motorTime = direction * motorTime / min_react;
+    motorTime = abs(direction * motorTime / min_react);
     //speed correction
-    direction = int(round(direction/min_react)*min_react);
+    direction = (direction/abs(direction))*min_react;
     Serial.print(" Direction corrected to ");
     Serial.print(direction);
     Serial.print(", and Time corrected to ");
@@ -190,7 +192,7 @@ void runMotor (int motorID, int direction, int motorTime = 0) {
   direction = max(-255, min(direction, 255));
 
   //ramp up time
-  int rampTime = abs(150.0 * (float)direction / 255.0); //very loose definition
+  signed int rampTime = abs(150.0 * (float)direction / 255.0); //very loose definition
   if (rampTime > motorTime) rampTime *= 0.2;
   if (motorTime == 0) rampTime = 0;
   Serial.println((String)" Ramp time approximated as "+rampTime);
@@ -201,6 +203,7 @@ void runMotor (int motorID, int direction, int motorTime = 0) {
       Serial.println(" H fwd");
       analogWrite(H_IN1, direction);
       analogWrite(H_IN2, 0);
+      rampTime -= motorTime*motorH_bias;
     } else if (direction < 0) {    // negative = reverse/counterclockwise
       Serial.println(" H rev");
       analogWrite(H_IN1, 0);
@@ -226,11 +229,12 @@ void runMotor (int motorID, int direction, int motorTime = 0) {
       Serial.println(" C fwd");
       analogWrite(C_IN1, direction);
       analogWrite(C_IN2, 0);
-      rampTime += motorTime*motorC_bias;
+      rampTime -= motorTime*motorC_bias;
     } else if (direction < 0) {   // - = reverse/counterclockwise
       Serial.println(" C rev");
       analogWrite(C_IN1, 0);
       analogWrite(C_IN2, abs(direction));
+      rampTime += motorTime*motorC_bias;
     } else {
       Serial.println(" C stop");
       analogWrite(C_IN1, 0);
@@ -291,17 +295,17 @@ void setup() {
   // variable definitions
   Serial.print("For basic motor full revolution check: ");
   test_tim = ang2time(360, fullSpeed);
-  Serial.print("For charting temperature per positoin increment: ");
+  Serial.print("For charting temperature per position increment: ");
   test_step = ang2time(30, 255);
   Serial.print("For either motor limit: ");
-  maxTurn = ang2time(90, 255);
+  maxTurn = ang2time(40, 250); //250 instead of 255 for ~ramp time
 
   // ------------------------------------------------------
   // Step 1: Motor H clockwise
   // ------------------------------------------------------
   Serial.println();
   Serial.print("Initial Motor H turn:");
-  int h0 = ang2time(80, fullSpeed);
+  int h0 = ang2time(60, fullSpeed);
   runMotor(MOTOR_H, 255, h0);
   
   // ------------------------------------------------------
@@ -309,7 +313,7 @@ void setup() {
   // ------------------------------------------------------
   Serial.println();
   Serial.print("Initial Motor C turn:");
-  int c0 = ang2time(30, fullSpeed);
+  int c0 = ang2time(40, fullSpeed);
   runMotor(MOTOR_C, -255, c0);
   
   // ------------------------------------------------------
@@ -327,41 +331,53 @@ void setup() {
 }
 
 void loop() {
+  ///*
   // ----
   // Main functionality
   // ----
+  long max_C_Open = -maxTurn*255;
+  long max_C_Close = 0;
   while (millis()<time1){
     // Temperature control
     tempNow = getTemp();
     dT_req = goalTemp - tempNow;
-    dR_req = dT_req*dRdT*255; //fake radians
+    dR_req = dT_req*dRdT; //time turning at full speed
 
-    if (abs(dR_req) < 200*255) {
+    if (abs(dR_req) < 200) {
       //too small of an adjustment
       //do nothing
     }
-    else if ((dR_req >= 0) && (motorC_log + dR_req >= 0) && (motorC_log <= 0)) {
-      //lower displacement limit, cannot close that far
+    else if (dR_req >= 0) {
+      //closing, but there is a lower displacement limit; cannot close too far
       Serial.print("+");
-      runMotor(MOTOR_C, 255, abs(int(motorC_log / 255)));
+      runMotor(MOTOR_C, 255, min(dR_req, max(int((max_C_Close - motorC_log) / 255), 0)));
     }
-    else if ((dR_req <= 0) && (motorC_log + dR_req <= -maxTurn) && (motorC_log >= -maxTurn)){
-      //upper displacement limit -- assumes fullspeed moves up until this point
+    else if (dR_req <= 0) {
+      //opening; upper displacement limit -- assumes fullspeed moves up until this point
       Serial.print("-");
-      runMotor(MOTOR_C, -200, abs(int(((-maxTurn - motorC_log) / revSpeed))));
+      runMotor(MOTOR_C, -255, abs(min(max(int(((max_C_Open - motorC_log) / 255)), dR_req), 0)));
     }
     else {
-      // fine adjustment
+      // somehow something else
       Serial.print("=");
-      runMotor(MOTOR_C, (dR_req/abs(dR_req))*255, abs(dR_req/255));
+      runMotor(MOTOR_C, (dR_req/abs(dR_req))*255, abs(dR_req));
     }
 
     delay(5000); // wait for water to catch up
   }
   if (!closed){
+    time1 = millis();
     closeAll();
     closed = !closed;
+    //LowPower.deepSleep();
   }
+  //can't get deep sleep, so make noise until somebody shuts it off
+  delay(timeJoggle);
+  timeJoggle += 1000;
+  runMotor(MOTOR_H, 200, 150);
+  closed = !closed;
+  //*/
+
 
   // Testing
   
@@ -372,7 +388,28 @@ void loop() {
 
   /*
   // ----
+  //speed and direction
+  test_spd += dir*test_delt;
+  runMotor(MOTOR_H, test_spd, 500);
+  runMotor(MOTOR_C, test_spd, 500);
+  if ((test_spd > 255) || (test_spd < -255)) dir *= -1;
+  */
+  
+  // ----
+  //basic time step (last defined as 360 degrees of rotation)
+  //runMotor(MOTOR_H, 255, test_tim);
+  //runMotor(MOTOR_C, 255, test_tim);
+
+  /*
+  // ----
   //temperature check
+  tempNow = getTemp();
+  delay(50);
+  */
+
+  /*
+  // ----
+  //temperature calibration
   Serial.print("While MOTOR_C is at ");
   Serial.println(motorC_log);
   for (int r = 0; r <= 10000; r+=2500){
@@ -405,20 +442,6 @@ void loop() {
   runMotor(MOTOR_C, -dir*255, test_step);
   */
   
-  /*
-  // ----
-  //speed and direction
-  test_spd += dir*test_delt;
-  runMotor(MOTOR_H, test_spd, 500);
-  runMotor(MOTOR_C, test_spd, 500);
-  if ((test_spd > 255) || (test_spd < -255)) dir *= -1;
-  */
-  
-  // ----
-  //basic time step
-  //runMotor(MOTOR_H, 255, test_tim);
-  //runMotor(MOTOR_C, 255, test_tim);
-
   /*
   // ----
   //led check
